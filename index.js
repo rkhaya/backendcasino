@@ -15,12 +15,8 @@ app.use(cookieParser())
 app.use(cors(corsOrigin))
 app.use(express.urlencoded({ extended: false }));
 
-//const loginRoute = require('./routes/Login')
-//app.use('/login', loginRoute)
-//const userRoute = require('./routes/User')
-//app.use('/user', userRoute)
 
-const authRoute = require('./routes/user') // this is wher eyou register your routes
+const authRoute = require('./routes/user') // this is where you register your routes
 app.use('/user', authRoute)
 const gameRoute = require('./routes/gamble')
 app.use('/gamble', gameRoute)
