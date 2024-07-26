@@ -2,10 +2,7 @@ const User = require("../models/user");
 const express = require("express");
 const router = express.Router();
 const authenticate = require("../middlewares/authMiddleware");
-const {
-  generateServerSeed,
-  getRandomMultiplier,
-} = require("../helpers/encrypt");
+const { generateServerSeed } = require("../helpers/encrypt");
 const crypto = require("crypto");
 
 const TOTAL_DROPS = 16;
@@ -126,84 +123,6 @@ router.get("/verify/dice/:serverSeed/:clientSeed/:hash", (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Server error" });
   }
-});
-
-router.post("/limbo", authenticate, async (req, res) => {
-  try {
-    const { betAmount, targetMultiplier, clientSeed } = req.body;
-    const user = await User.findById(req.userId);
-    console.log(user.money)
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    if (!betAmount) {
-      return res.status(400).json({ error: "Bet amount is required" });
-    }
-
-    if (betAmount > user.money) {
-      return res.status(400).json({ error: "Insufficient funds" });
-    }
-
-    const serverSeed = generateServerSeed(); // Generate a server seed
-
-    const randomMultiplier = getRandomMultiplier(clientSeed, serverSeed);
-    const win = randomMultiplier >= targetMultiplier;
-    const payout = win ? betAmount * targetMultiplier - betAmount : 0
-    const updatedMoney = win ? user.money + payout : user.money - betAmount;
-    user.money = updatedMoney;
-    console.log(user.money)
-    await user.save();
-    res.json({
-      success: true,
-      win,
-      updatedMoney,
-      clientSeed,
-      serverSeed,
-      hash: crypto
-        .createHash("sha256")
-        .update(serverSeed + "|" + clientSeed)
-        .digest("hex"),
-      randomMultiplier,
-      message: win ? "You won!" : "You lost!",
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-router.get('/verify/limbo/:serverSeed/:clientSeed/:hash', (req, res) => {
-    try {
-        const { serverSeed, clientSeed, hash } = req.params;
-
-        // Recreate combined seed using serverSeed and clientSeed
-        const combinedSeed = serverSeed + "|" + clientSeed;
-
-        // Calculate hash locally
-        const calculatedHash = crypto.createHash('sha256').update(combinedSeed).digest('hex');
-
-        // Compare hashes
-        if (calculatedHash === hash) {
-            // Verification successful
-            const randomMultiplier = getRandomMultiplier(clientSeed, serverSeed);
-            res.json({
-                success: true,
-                randomMultiplier,
-                message: `Game outcome verified. Multiplier: ${randomMultiplier}`
-            });
-        } else {
-            // Verification failed
-            res.json({
-                success: false,
-                message: "Game outcome verification failed. Possible tampering."
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Server error" });
-    }
 });
 
 router.post("/plinko", authenticate, async (req, res) => {
