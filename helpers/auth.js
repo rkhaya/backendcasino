@@ -17,7 +17,7 @@ const hashPassword = (password) => {
 };
 
 const comparePassword = (password, hashed) => {
-  return bcrypt.compare(password, hashed);
+  return bcrypt.compare(password, hashed); // compares password with the hashed version of the password
 };
 
 const validateEmail = (email) => {
